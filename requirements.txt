@@ -1,0 +1,11 @@
+certifi==2024.12.14
+charset-normalizer==3.4.1
+colorlog==6.9.0
+fast-json==0.3.2
+idna==3.10
+prettylog==0.3.0
+pysubs2==1.8.0
+requests==2.32.3
+tqdm==4.67.1
+ujson==5.10.0
+urllib3==2.3.0
