@@ -17,11 +17,11 @@ class Translator(object):
         if line.endswith("\\R"):
             line = line[:-2]
 
-        if str(translated).endswith("N"):
-                translated = translated[:-1]
+        if str(line).endswith("N"):
+                line = line[:-1]
 
-        if str(translated).endswith("R"):
-                translated = translated[:-1]
+        if str(line).endswith("R"):
+                line = line[:-1]
 
         if line.endswith("\\"):
             line = line[:-1]
@@ -57,10 +57,8 @@ class Translator(object):
         def worker(line):
             translated = self.translate_line(line.text, input_language, target_language)
             logging.debug(f"Translated {line.text} -> {translated}")
-            
-            translated = translated.strip()
 
-            line.text = self.__fix_line(translated)
+            line.text = self.__fix_line(translated.strip())
 
 
         with ThreadPoolExecutor(max_workers=self.max_threads) as executor:
