@@ -5,31 +5,29 @@ Bazarr Translator is an automation tool designed to check Bazarr's wanted movies
 ## Requirements
 
 - Docker
-- Docker Compose (for easier setup)
 - Cron (for automatic execution)
 - LibreTranslate
 - Sonarr
 - Radarr
 - Bazarr
 
-## Docker Setup
-
-#### Using Docker Compose
-
-For an easy setup, you can use Docker Compose:
-
-1. Run the following command to start the project using Docker Compose:
-
-    ```bash
-    docker-compose up -d
-    ```
+## Docker Setup``
 
 #### Using Docker CLI
 
-Alternatively, you can run the project with Docker directly by using the following command:
+Build the project
 
 ```bash
-sudo docker run \
+git clone https://github.com/ParrotDevel0per/BazarrTranslator.git
+cd BazarrTranslator
+docker build -t bazarrtranslator:latest .
+```
+
+
+You can run the project with Docker directly by using the following command:
+
+```bash
+docker run \
         -e "LIBRETRANSLATE_ENABLED=true" \
         -e "LIBRETRANSLATE_SERVER=YOUR_LIBRETRANSLATE_SERVER_URL" \
         -e "BAZARR_SERVER=http://localhost:6767" \
@@ -95,4 +93,4 @@ Once the container is running (manually or automatically), the tool will automat
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/ParrotDevel0per/BazarrTranslator/blob/master/LICENSE) file for details.

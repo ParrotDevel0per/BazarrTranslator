@@ -38,9 +38,18 @@ def process_episodes():
 
 def main():
     logging.info("Starting")
-    
-    process_movies()
-    process_episodes()
+    tasks = [
+        threading.Thread(target=process_movies),
+        threading.Thread(target=process_episodes),
+    ]
+
+    for t in tasks:
+        t.start()
+
+    for t in tasks:
+        t.join()
+
+
     
 
 if __name__ == '__main__':
