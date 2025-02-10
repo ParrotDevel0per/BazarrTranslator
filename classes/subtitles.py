@@ -4,6 +4,7 @@ import logging
 import pysubs2
 import requests
 from classes.translator import Translator
+from utils.common import get_video_subtitles
 
 
 class Subtitles(object):
@@ -27,6 +28,32 @@ class Subtitles(object):
 
         return resp.json()
 
+    def _get_burned_subs(self, imdb_id, episode, wanted_obj):
+        path = wanted_obj.video_path()
+        grabbed_subs = get_video_subtitles(path)
+        if not grabbed_subs:
+            return []
+
+        result = []
+        for i, sub in enumerate(grabbed_subs):
+            if sub['forced']:
+                continue
+
+            if not sub["content"]:
+                continue
+
+            result.append({
+                "ISO639": sub["language"],
+                "language": sub["language"],
+                "SubFormat": "ass",
+                "content": sub["content"].encode("utf-8"),
+                "SubRating": 100-i,
+                "sub_info": sub["sub_info"],
+            })
+        
+
+        return result
+
     def _translate_subs(self, results, languages=[]):
         logging.info(f"Translating subtitles to {', '.join(languages)}")
         if len(results) == 0:
@@ -40,15 +67,21 @@ class Subtitles(object):
         )
         best = sorted_[0]
 
-        subtitle_content = requests.get(best["SubDownloadLink"], headers={"X-User-Agent": "trailers.to-UA"})
+        #print(best)
+        #exit(0)
 
-        if not subtitle_content.ok:
-            return []
+        subtitle_content = best.get("content")
 
-        if subtitle_content.url.endswith(".gz"):
-            subtitle_content = gzip.decompress(subtitle_content.content)
-        else:
-            subtitle_content = subtitle_content.content
+        if not subtitle_content:
+            subtitle_content = requests.get(best["SubDownloadLink"], headers={"X-User-Agent": "trailers.to-UA"})
+
+            if not subtitle_content.ok:
+                return []
+
+            if subtitle_content.url.endswith(".gz"):
+                subtitle_content = gzip.decompress(subtitle_content.content)
+            else:
+                subtitle_content = subtitle_content.content
 
         translator = Translator()
         response = []
@@ -66,14 +99,20 @@ class Subtitles(object):
 
         return response
 
-    def get_subtitles(self, imdb_id, episode=None, languages=[], title=""):
+    def get_subtitles(self, imdb_id, episode=None, languages=[], title="", wanted_obj=None):
         local_name = f"({imdb_id}) [{episode}] {title}" if episode else f"({imdb_id}) {title}"
         logging.info(f"Getting subtitles for {local_name}, Languages: {', '.join(languages)}")
 
-        # Use opensubtitles.org to search for subs
+        # Check for subtitles included in the file
+        result = self._get_burned_subs(imdb_id, episode=episode, wanted_obj=wanted_obj)
+
+        if not result:
+            # Use opensubtitles.org to search for subs
+            result = self.opensubtitles(imdb_id, episode=episode)
+
         _os_results = [
             x
-            for x in self.opensubtitles(imdb_id, episode=episode)
+            for x in result
             if x["SubFormat"] in ["ass", "ssa", "srt"]
         ]
         logging.info(f"Found {len(_os_results)} subtitles")

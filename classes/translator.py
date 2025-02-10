@@ -28,22 +28,29 @@ class Translator(object):
 
         return line
 
+    def __fix_input_string(self, text: str) -> str:
+        return text.strip().replace("\\\\N", "\n").replace("\\\\R", "\r").replace("\\N", "\n").replace("\\R", "\r")
+
     def translate_line(self, text: str, input_language: str, target_language: str) -> str:
+        if len(self.__fix_input_string(text)) < 2: 
+            return text
+
         headers = {
             "Content-Type": "application/json"
         }
         data = {
-            "q": text.strip(),
+            "q": self.__fix_input_string(text),
             "source": input_language,
             "target": target_language,
             "format": "text",
             "alternatives": 0,
             "api_key": ""
         }
+
         response = requests.post(f"{os.getenv('LIBRETRANSLATE_SERVER')}/translate", headers=headers, data=json.dumps(data))
 
         if not response.ok:
-            logging.error(f"Failed to translate line: {text}. Status code: {response.status_code}")
+            logging.error(f"Failed to translate line: {text}. Status code: {response.status_code}. Response: {response.text}")
             return text
         response = response.json()
 

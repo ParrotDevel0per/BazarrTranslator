@@ -4,6 +4,7 @@ import logging
 import pysubs2
 from io import BytesIO
 from utils.common import random_string
+from pathlib import Path
 
 class Wanted(object):
     def __init__(self, data, _type="episode"):
@@ -15,6 +16,7 @@ class Wanted(object):
         self.episode = data.get('episode_number', None)
         self.missing_subtitles = [x['code2'] for x in data['missing_subtitles']]
         self.id = self.data['sonarrSeriesId'] if 'sonarrSeriesId' in data else data['radarrId']
+        self.episode_id = self.data.get('sonarrEpisodeId', None)
 
         self.__set_ids()
 
@@ -68,7 +70,7 @@ class Wanted(object):
             "radarrid": self.data.get("radarrId", None),     
             "language": language,
             "forced": "false",
-            "hi": "false" # TODO: Make hearing-impaired detection   
+            "hi": "false" # TODO: Make hearing-impaired detection  #NOTE looks like bazarr api ignores this param 
         }
 
         # Files payload with custom filename
@@ -130,3 +132,38 @@ class Wanted(object):
             self.__resolve_movie(content, language)
         else:
             self.__resolve_episode(content, language)
+
+    def video_path(self):
+        path = None
+        if self.episode_id:
+            resp = requests.get(f"{os.getenv('BAZARR_SERVER')}/api/episodes?seriesid%5B%5D={self.id}&episodeid%5B%5D={self.episode_id}",
+                                headers={
+                                    "X-API-KEY": os.getenv("BAZARR_API_KEY"),
+                                    "accept": "application/json",
+                                    "accept-encoding": "identity"
+                                })
+                                
+            if resp.ok:
+                path = resp.json()['data'][0]['path']
+        
+        else:
+            resp = requests.get(f"{os.getenv('BAZARR_SERVER')}/api/movies?radarrid={self.id}", headers={
+                "X-API-KEY": os.getenv("BAZARR_API_KEY"),
+                "accept": "application/json",
+                "accept-encoding": "identity"
+            })
+
+            if resp.ok:
+                path = resp.json()['data'][0]['path']
+        
+        if "/tv" in path:
+            path = path.replace("/tv", "/media/TV Shows")
+        elif "/movies" in path:
+            path = path.replace("/movies", "/media/Movies")
+
+        path = Path(path)
+
+        if os.path.exists(path):
+            return path
+
+        return None
